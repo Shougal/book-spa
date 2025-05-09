@@ -7,7 +7,7 @@ export default async function GutAPI(bookId: number){
     if(!response.ok){
         throw new Error(`HTTP Error: Status: ${response.status}`);
     }
-    const data = response.text();
+    const data =  await response.text();
     return data;
 
 
