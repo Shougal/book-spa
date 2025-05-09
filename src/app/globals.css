@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
+
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,41 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+} */
+
+h1{
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+.head{
+  background-color: #D0D1D0;
+}
+
+body{
+  background-color: #B2ADA7;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.gutLib{
+  margin: auto;
+  border: 3px solid #D0D1D0;
+  
+}
+.libLabel, .idBtn{
+  margin-top: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+  display: block;
+}
+.libLink, .libInput, .idBtn {
+  text-align: center;
+  display: block;
+  
+}
+.idBtn{
+  margin-left: auto;
+  margin-right: auto;
+}
+.libBtn {
+  
+  margin-bottom: 5px;
 }
