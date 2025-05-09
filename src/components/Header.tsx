@@ -1,32 +1,27 @@
-import Container from 'react-bootstrap/Container';
-import Navbar from 'react-bootstrap/Navbar';
-import Nav from 'react-bootstrap/Nav';
-import NavDropdown from 'react-bootstrap/NavDropdown';
-import NavbarBrand  from 'react-bootstrap/NavbarBrand';
-import  NavLink  from 'react-bootstrap/NavLink';
-import NavbarCollapse from 'react-bootstrap/NavbarCollapse';
 import Link from 'next/link';
-import NavbarToggle from 'react-bootstrap/NavbarToggle';
+
+
 
 export default function Header(){
     
 
     return (
-        <Navbar expand ="lg" className='bg-light'>
-            <Container>
-                <NavbarBrand>
-                BookInsight 
-                </NavbarBrand>
-                <NavbarToggle/>
-                <NavbarCollapse >
-                    <Nav className="me-auto">
-                        <NavLink as ={Link}  href='/'>Home</NavLink>
-
-                    </Nav>
-                </NavbarCollapse>
-
-
-            </Container>
-        </Navbar>
+    <nav className="navbar navbar-expand-lg navbar-light  head">
+        <Link href="/" className="navbar-brand head-text-brand" >BookInsight</Link>
+        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span className="navbar-toggler-icon"></span>
+        </button>
+        <div className="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul className="navbar-nav mr-auto">
+                <li className="nav-item active">
+                    <Link href="/" className="nav-link head-text-navs" >Home <span className="sr-only">(current)</span></Link>
+                    
+                </li>
+                {/* <li>
+                    <Link href="/linking" className='nav-link'>Link</Link>
+                </li> */}
+            </ul>
+        </div>
+    </nav>
     );
 }
