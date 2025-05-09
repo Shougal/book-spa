@@ -10,9 +10,14 @@ import GutAPI from "@/components/GutAPI";
 export default function home(){
 
   const handleGutDownload =async (bookId:number) => {
+
     try{
-      let data = await GutAPI(bookId);
-      let dataLines = (await data).split("\n")
+      const data= await fetch(`/api/GutAPI?bookId=${bookId}`);
+      if(data ===null){
+        console.log("response was null");
+        return;
+      }
+      let dataLines = (await data.text()).split("\n")
       let dataLimit = 5;
       for(let i=0; i<=dataLimit-1 && i<dataLines.length; i++){
         console.log(dataLines[i] + "\n");
