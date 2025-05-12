@@ -3,7 +3,7 @@
 import Header from "@/components/Header";
 import Link from 'next/link';
 import React from "react";
-import GutAPI from "@/components/GutAPI";
+
 
 
 
@@ -17,11 +17,8 @@ export default function home(){
         console.log("response was null");
         return;
       }
-      let dataLines = (await data.text()).split("\n")
-      let dataLimit = 5;
-      for(let i=0; i<=dataLimit-1 && i<dataLines.length; i++){
-        console.log(dataLines[i] + "\n");
-      }
+      const text = await data.text();
+      handleProcessText(text);
       
 
     } catch(error){
@@ -30,6 +27,45 @@ export default function home(){
     
 
 
+  }
+  const handleProcessText = async(text: string)=>{
+    try{
+      // post request headers
+      const options = {
+        method: 'POST',
+        headers:{
+          'Content-Type': "text/plain",
+        },
+        body: text,
+      };
+      
+      // identify all characters by sending api request to ProcessMessage route
+      const response = await fetch('/api/ProcessMessage', options);
+      
+      if(response.status===200){
+        const identifiedChars = await response.text();
+        
+        if(identifiedChars === null){
+          console.log("Sorry it looks like your book has no identified characters. Please try another book!");
+        }
+
+        try{
+          const jsonIdentifiedChars = JSON.parse(identifiedChars);
+          console.log(jsonIdentifiedChars);
+          return;
+
+        }catch(jsonError){
+          console.error("Could not parse response as JSON:", jsonError);
+        }
+      
+      
+      }else{
+        return console.log("status for fetching chars !=200");
+      }
+    
+    }catch(error){
+      console.log("The error is: "+error);
+    }
   }
   
   const handleGutApi = (event: React.SyntheticEvent)=>{
