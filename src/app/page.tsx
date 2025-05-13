@@ -4,13 +4,19 @@ import Header from "@/components/Header";
 import Link from 'next/link';
 import React from "react";
 import { useState, useEffect } from "react";
+import Mermaid from "@/components/Mermaid";
+
+
+
 
 
 
 export default function home(){
 
   const [bookNumber, setBookNumber] = useState(0);
-  const [textResult, setTextResult] = useState(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
+  const [textResult, setTextResult] = useState(`Loading... please give us a minute while we do our magic!`);
+  const [mermaidChart, setMermaidChart] = useState<string>("");
+  const [showChart, setShowChart] = useState(false);
 
 
   const handleGutDownload =async (bookId:number) => {
@@ -18,6 +24,7 @@ export default function home(){
     try{
       const data= await fetch(`/api/GutAPI?bookId=${bookId}`);
       if(data ===null){
+        setTextResult(`Looks like we could not find book number ${bookId} in the library! Please give us a valid book number!`);
         console.log("response was null");
         return;
       }
@@ -104,6 +111,13 @@ export default function home(){
           setTextResult(`Main Characters are:\n ${formattedMainCharacters || "None"}\nSupporting characters are:\n ${formattedSupportingCharacters || "None"}\n
             Minor Characters are:\n ${formattedMinorCharacters||"None"}\nTheir interactions are as follows:\n ${formattedInteractions||"None"}`
           );
+
+          // Mermaid graph of interactions
+          const interactionChart = `graph TD\n` + interactionsList.map(
+            (interact) =>
+              `  ${interact.source} -->|${interact.type}| ${interact.target}`
+          ).join("\n");
+          setMermaidChart(interactionChart);
           // console.log(jsonIdentifiedChars);
           return;
 
@@ -153,6 +167,10 @@ export default function home(){
 
     return;
   };
+  const handleVisuals =()=> {
+    setShowChart(true);
+    
+  }
   return (
     <>
     
@@ -165,8 +183,6 @@ export default function home(){
             <button type="button" className="btn btn-light btn-rounded libBtn "> link to library</button>
           </a>
           </div>
-      {/* </form>
-      <form> */}
         <div className="form-group">
           <label htmlFor="BookId" className="libLabel">What's your book number?</label>
           <input type="number" className="form-control libInput" id="BookId" placeholder="only integers numbers are allowed, ex:'1787'"  required/>
@@ -177,7 +193,6 @@ export default function home(){
       
       {bookNumber>=1 && (
       <div className="card chars-div" >
-        <img className="card-img-top chars-img" src=".../100px180/" alt="Card image cap"/>
         <div className="card-body chars-body">
           <h5 className="card-title chars-title"> The identified Characters for book number {bookNumber} is as follows: </h5>
           <div className="card-text chars-text"> {textResult.split("\n").map((line, index) => (
@@ -187,6 +202,22 @@ export default function home(){
           </div>
       </div>
       )}
+
+      {mermaidChart!=="" && !showChart &&  (
+        <>
+        <p>Want to see the visualized interactions between your character?</p>
+        <button type="button" onClick={handleVisuals} > YES! </button>
+        </>
+      )}
+      {showChart && (
+        <div className="chartTable">
+          <Mermaid chart={mermaidChart} />
+        </div>
+      )}
+      
+
+
+
     </div>
      
   </>
