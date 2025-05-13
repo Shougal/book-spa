@@ -1,10 +1,10 @@
 'use client';
-
 import Header from "@/components/Header";
 import Link from 'next/link';
 import React from "react";
 import { useState, useEffect } from "react";
 import Mermaid from "@/components/Mermaid";
+import { setLogLevel } from "mermaid/dist/logger.js";
 
 
 
@@ -17,6 +17,57 @@ export default function home(){
   const [textResult, setTextResult] = useState(`Loading... please give us a minute while we do our magic!`);
   const [mermaidChart, setMermaidChart] = useState<string>("");
   const [showChart, setShowChart] = useState(false);
+  const [isIdentified, setIsIdentified] = useState(false);
+  const [formattedMainCharacters, setFormattedMainCharacters] = useState<string>("Looks like there are no main characters!");
+  const [formattedSupportingCharacters, setFormattedSupportingCharacters] = useState<string>("Looks like there are no supporting characters!");
+  const [formattedMinorCharacters, setFormattedMinorCharacters] = useState<string>("Looks like there are no minor characters!");
+  const [loading, setLoading] = useState(false);
+
+
+  const clear = ()=>{
+    setIsIdentified(false);
+    setShowChart(false);
+    setMermaidChart("");
+    setTextResult("");
+    setBookNumber(0);
+    setFormattedMainCharacters("Looks like there are no main characters!");
+    setFormattedSupportingCharacters("Looks like there are no supporting characters!")
+    setFormattedMinorCharacters("Looks like there are no minor characters!")
+    setLoading(true);
+  }
+  const handleGutApi = (event: React.SyntheticEvent)=>{
+    clear();
+    event.preventDefault();
+    let bookInput = document.getElementById("BookId") as HTMLInputElement | null ;
+    let bookId: number | null = null;
+    
+
+    if(bookInput?.value){
+      let parsed = parseInt(bookInput.value);
+      if(parsed <= 0){
+        alert("please enter a valid number that is not 0 and not negative!")
+        setBookNumber(0);
+        setLoading(false);
+        setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters since it is not a valid book number. Please try another book!`);
+        setIsIdentified(false);
+        return;
+      }
+      if(!isNaN(parsed)){
+        bookId= parsed;
+        setBookNumber(bookId);
+        handleGutDownload(bookId);
+        
+      }
+      else if(isNaN(parsed)){
+        setBookNumber(0);
+        setIsIdentified(false);
+        setLoading(false);
+        alert("Please make sure the book number is only integers");
+        return;
+      }
+    }
+    return;
+  };
 
 
   const handleGutDownload =async (bookId:number) => {
@@ -25,6 +76,8 @@ export default function home(){
       const data= await fetch(`/api/GutAPI?bookId=${bookId}`);
       if(data ===null){
         setTextResult(`Looks like we could not find book number ${bookId} in the library! Please give us a valid book number!`);
+        setIsIdentified(false);
+        setLoading(false);
         console.log("response was null");
         return;
       }
@@ -58,7 +111,9 @@ export default function home(){
         
         
         if(identifiedChars === null){
-          setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`)
+          setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
+          setIsIdentified(false);
+          setLoading(false);
           console.log("Sorry it looks like your book has no identified characters. Please try another book!");
         }
 
@@ -79,18 +134,17 @@ export default function home(){
 
           
           const mainCharacters: Character[] = jsonIdentifiedChars?.main_characters || [];
-          
-          const formattedMainCharacters = mainCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
+          setFormattedMainCharacters(mainCharacters.length? mainCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no main characters!");
+          console.log(formattedMainCharacters);
           
           // Parse all supporting chars:
           const supportingCharacters: Character[] = jsonIdentifiedChars?.supporting_characters || [];
-          const formattedSupportingCharacters = supportingCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
+          setFormattedSupportingCharacters(supportingCharacters.length? supportingCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no supportingcharacters!");
 
           // Parse all minor characters:
           const minorCharacters: Character[] = jsonIdentifiedChars?.minor_characters || [];
+          setFormattedMinorCharacters(minorCharacters.length? minorCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no minor characters!");
 
-          const formattedMinorCharacters = minorCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
-         
           // Parse all interactions:
           type interactionsType ={
             source: string,
@@ -102,9 +156,10 @@ export default function home(){
 
           // Format interactions list nicely:
           const interactionsList: interactionsType[] = jsonIdentifiedChars?.interactions || [];
-          const formattedInteractions = interactionsList.map((interact: interactionsType)=> `.Source: ${interact.source} "\n" .Target: ${interact.target}
-          "\n" .Type: ${interact.type} "\n" .Count: ${interact.count}
-          `). join("\n");
+          const formattedInteractions = interactionsList.map((interact: interactionsType) =>
+          `.Source: ${interact.source}\nTarget: ${interact.target}\nType: ${interact.type}\nCount: ${interact.count}`
+          ).join("\n\n");
+
 
 
           //Set Text to be returned with formatted data:
@@ -112,13 +167,19 @@ export default function home(){
             Minor Characters are:\n ${formattedMinorCharacters||"None"}\nTheir interactions are as follows:\n ${formattedInteractions||"None"}`
           );
 
+          
+
           // Mermaid graph of interactions
           const interactionChart = `graph TD\n` + interactionsList.map(
             (interact) =>
               `  ${interact.source} -->|${interact.type}| ${interact.target}`
           ).join("\n");
           setMermaidChart(interactionChart);
-          // console.log(jsonIdentifiedChars);
+
+          // Set isIdentified to true since we got a response back with the book's characters:
+          setIsIdentified(true);
+          setLoading(false);
+          
           return;
 
         }catch(jsonError){
@@ -127,6 +188,9 @@ export default function home(){
       
       
       }else{
+        setIsIdentified(false);
+        setLoading(false);
+        setTextResult("Sorry looks like your book is out of our scope please try again later!");
         return console.log("status for fetching chars !=200");
       }
     
@@ -134,39 +198,7 @@ export default function home(){
       console.log("The error is: "+error);
     }
   }
-  
-  const handleGutApi = (event: React.SyntheticEvent)=>{
-    event.preventDefault();
-    let bookInput = document.getElementById("BookId") as HTMLInputElement | null ;
-    let bookId: number | null = null;
-    
 
-    if(bookInput?.value){
-      let parsed = parseInt(bookInput.value);
-      if(parsed <= 0){
-        alert("please enter a valid number that is not 0 and not negative!")
-        setBookNumber(0);
-        setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
-        return;
-      }
-      if(!isNaN(parsed)){
-        bookId= parsed;
-        setBookNumber(bookId);
-        handleGutDownload(bookId);
-        
-      }
-      else if(isNaN(parsed)){
-        setBookNumber(0);
-        alert("Please make sure the book number is only integers");
-        return;
-      }
-    }
-
-    
-
-
-    return;
-  };
   const handleVisuals =()=> {
     setShowChart(true);
     
@@ -190,19 +222,33 @@ export default function home(){
         <button type="submit" className="btn btn-secondary btn-rounded idBtn">Submit</button>
 
       </form>
-      
-      {bookNumber>=1 && (
-      <div className="card chars-div" >
-        <div className="card-body chars-body">
-          <h5 className="card-title chars-title"> The identified Characters for book number {bookNumber} is as follows: </h5>
-          <div className="card-text chars-text"> {textResult.split("\n").map((line, index) => (
-    <p key={index}>{line}</p>
-  ))}</div>
-          
-          </div>
-      </div>
+
+      {loading && (
+      <div className="loading-msg">
+        <p>Loading... please give us a minute while we do our magic!</p>
+        </div>
       )}
 
+      {!loading && !isIdentified && (
+        <div className="notIdentified-msg">
+          <p>{textResult}</p>
+        </div>
+      )}
+      {bookNumber>=1 && isIdentified && (
+        <div className="identifiedChars">
+          <h3 className="CharsTitle"> The main characters are:</h3>
+          <p className="chars">{formattedMainCharacters}</p>
+
+          <h3 className="CharsTitle"> The Supporting characters are:</h3>
+          <p className="chars">{formattedSupportingCharacters}</p>
+
+          <h3 className="CharsTitle"> The minor characters are:</h3>
+          <p className="chars">{formattedMinorCharacters}</p>
+         
+
+        </div>
+      )}
+    
       {mermaidChart!=="" && !showChart &&  (
         <>
         <p>Want to see the visualized interactions between your character?</p>
