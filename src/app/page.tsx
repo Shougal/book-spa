@@ -3,11 +3,15 @@
 import Header from "@/components/Header";
 import Link from 'next/link';
 import React from "react";
-
+import { useState, useEffect } from "react";
 
 
 
 export default function home(){
+
+  const [bookNumber, setBookNumber] = useState(0);
+  const [textResult, setTextResult] = useState(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
+
 
   const handleGutDownload =async (bookId:number) => {
 
@@ -45,13 +49,62 @@ export default function home(){
       if(response.status===200){
         const identifiedChars = await response.text();
         
+        
         if(identifiedChars === null){
+          setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`)
           console.log("Sorry it looks like your book has no identified characters. Please try another book!");
         }
 
         try{
-          const jsonIdentifiedChars = JSON.parse(identifiedChars);
-          console.log(jsonIdentifiedChars);
+          const jsonResult = JSON.parse(identifiedChars);
+          
+
+          // Double parsing the json since identifiedChars is a string that contains nested JSON
+          const jsonIdentifiedChars = JSON.parse(jsonResult);
+          
+
+          // Parse all main characters:
+          type Character ={
+            name: string,
+            description: string,
+          }
+          
+
+          
+          const mainCharacters: Character[] = jsonIdentifiedChars?.main_characters || [];
+          
+          const formattedMainCharacters = mainCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
+          
+          // Parse all supporting chars:
+          const supportingCharacters: Character[] = jsonIdentifiedChars?.supporting_characters || [];
+          const formattedSupportingCharacters = supportingCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
+
+          // Parse all minor characters:
+          const minorCharacters: Character[] = jsonIdentifiedChars?.minor_characters || [];
+
+          const formattedMinorCharacters = minorCharacters.map((c: Character) => `. ${c.name}: ${c.description}`).join("\n");
+         
+          // Parse all interactions:
+          type interactionsType ={
+            source: string,
+            target: string,
+            type: string,
+            count: number,
+          }
+
+
+          // Format interactions list nicely:
+          const interactionsList: interactionsType[] = jsonIdentifiedChars?.interactions || [];
+          const formattedInteractions = interactionsList.map((interact: interactionsType)=> `.Source: ${interact.source} "\n" .Target: ${interact.target}
+          "\n" .Type: ${interact.type} "\n" .Count: ${interact.count}
+          `). join("\n");
+
+
+          //Set Text to be returned with formatted data:
+          setTextResult(`Main Characters are:\n ${formattedMainCharacters || "None"}\nSupporting characters are:\n ${formattedSupportingCharacters || "None"}\n
+            Minor Characters are:\n ${formattedMinorCharacters||"None"}\nTheir interactions are as follows:\n ${formattedInteractions||"None"}`
+          );
+          // console.log(jsonIdentifiedChars);
           return;
 
         }catch(jsonError){
@@ -76,12 +129,20 @@ export default function home(){
 
     if(bookInput?.value){
       let parsed = parseInt(bookInput.value);
+      if(parsed <= 0){
+        alert("please enter a valid number that is not 0 and not negative!")
+        setBookNumber(0);
+        setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
+        return;
+      }
       if(!isNaN(parsed)){
         bookId= parsed;
+        setBookNumber(bookId);
         handleGutDownload(bookId);
         
       }
       else if(isNaN(parsed)){
+        setBookNumber(0);
         alert("Please make sure the book number is only integers");
         return;
       }
@@ -113,8 +174,22 @@ export default function home(){
         <button type="submit" className="btn btn-secondary btn-rounded idBtn">Submit</button>
 
       </form>
+      
+      {bookNumber>=1 && (
+      <div className="card chars-div" >
+        <img className="card-img-top chars-img" src=".../100px180/" alt="Card image cap"/>
+        <div className="card-body chars-body">
+          <h5 className="card-title chars-title"> The identified Characters for book number {bookNumber} is as follows: </h5>
+          <div className="card-text chars-text"> {textResult.split("\n").map((line, index) => (
+    <p key={index}>{line}</p>
+  ))}</div>
+          
+          </div>
+      </div>
+      )}
     </div>
-    </>
+     
+  </>
     
 
   );
