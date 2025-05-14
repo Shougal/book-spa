@@ -38,8 +38,9 @@ body{
   background-color: #B2ADA7;
   font-family: Arial, Helvetica, sans-serif;
 }
-.gutLib{
+.gutLib, .identifiedChars, .loading-msg, .notIdetntified-msg, .chartTable{
   margin: auto;
+  margin-top: 2px;
   border: 3px solid #D0D1D0;
   
 }
@@ -61,4 +62,30 @@ body{
 .libBtn {
   
   margin-bottom: 5px;
+}
+.chars-text {
+  white-space: pre-line;
+  text-align: left;
+  padding: 1rem;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.CharsTitle, .chars, .chartHeader, .chartButton {
+  text-align: center;
+  /* margin-top: 3px; */
+  /* font-style: italic; */
+  font-family: 'Segoe UI', sans-serif;
+
+}
+.CharsTitle{
+  font-style: italic;
+  margin-top: 3px;
+}
+.chars{
+  margin-bottom: 2px;
+}
+.chartHeader{
+  margin-top: 4px;
+
 }

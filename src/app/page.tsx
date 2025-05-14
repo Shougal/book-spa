@@ -22,6 +22,8 @@ export default function home(){
   const [formattedSupportingCharacters, setFormattedSupportingCharacters] = useState<string>("Looks like there are no supporting characters!");
   const [formattedMinorCharacters, setFormattedMinorCharacters] = useState<string>("Looks like there are no minor characters!");
   const [loading, setLoading] = useState(false);
+  const [mermaidError, setMermaidError] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
 
   const clear = ()=>{
@@ -36,8 +38,9 @@ export default function home(){
     setLoading(true);
   }
   const handleGutApi = (event: React.SyntheticEvent)=>{
-    clear();
     event.preventDefault();
+    setHasSubmitted(true);
+    clear();
     let bookInput = document.getElementById("BookId") as HTMLInputElement | null ;
     let bookId: number | null = null;
     
@@ -134,16 +137,16 @@ export default function home(){
 
           
           const mainCharacters: Character[] = jsonIdentifiedChars?.main_characters || [];
-          setFormattedMainCharacters(mainCharacters.length? mainCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no main characters!");
+          setFormattedMainCharacters(mainCharacters.length? mainCharacters.map((c: Character) => `${c.name}: ${c.description}`).join("\n"): "Looks like there are no main characters!");
           console.log(formattedMainCharacters);
           
           // Parse all supporting chars:
           const supportingCharacters: Character[] = jsonIdentifiedChars?.supporting_characters || [];
-          setFormattedSupportingCharacters(supportingCharacters.length? supportingCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no supportingcharacters!");
+          setFormattedSupportingCharacters(supportingCharacters.length? supportingCharacters.map((c: Character) => `${c.name}: ${c.description}`).join("\n"): "Looks like there are no supportingcharacters!");
 
           // Parse all minor characters:
           const minorCharacters: Character[] = jsonIdentifiedChars?.minor_characters || [];
-          setFormattedMinorCharacters(minorCharacters.length? minorCharacters.map((c: Character) => `.${c.name}: ${c.description}`).join("\n"): "Looks like there are no minor characters!");
+          setFormattedMinorCharacters(minorCharacters.length? minorCharacters.map((c: Character) => `${c.name}: ${c.description}`).join("\n"): "Looks like there are no minor characters!");
 
           // Parse all interactions:
           type interactionsType ={
@@ -223,13 +226,13 @@ export default function home(){
 
       </form>
 
-      {loading && (
+      {loading && hasSubmitted && (
       <div className="loading-msg">
         <p>Loading... please give us a minute while we do our magic!</p>
         </div>
       )}
 
-      {!loading && !isIdentified && (
+      {hasSubmitted && !loading && !isIdentified && (
         <div className="notIdentified-msg">
           <p>{textResult}</p>
         </div>
@@ -237,13 +240,26 @@ export default function home(){
       {bookNumber>=1 && isIdentified && (
         <div className="identifiedChars">
           <h3 className="CharsTitle"> The main characters are:</h3>
-          <p className="chars">{formattedMainCharacters}</p>
+          <ol>
+            {formattedMainCharacters.split("\n").filter(line=>line.trim() !=="").map((line,index)=>
+            <li className="chars" key={index}>{line}</li>
+            )}
+          </ol>
+         
 
           <h3 className="CharsTitle"> The Supporting characters are:</h3>
-          <p className="chars">{formattedSupportingCharacters}</p>
+          <ol>
+            {formattedSupportingCharacters.split("\n").filter(line=>line.trim() !=="").map((line,index)=>
+            <li className="chars" key={index}>{line}</li>
+            )}
+          </ol>
 
           <h3 className="CharsTitle"> The minor characters are:</h3>
-          <p className="chars">{formattedMinorCharacters}</p>
+          <ol>
+            {formattedMinorCharacters.split("\n").filter(line=>line.trim() !=="").map((line,index)=>
+            <li className="chars" key={index}>{line}</li>
+            )}
+          </ol>
          
 
         </div>
@@ -251,15 +267,20 @@ export default function home(){
     
       {mermaidChart!=="" && !showChart &&  (
         <>
-        <p>Want to see the visualized interactions between your character?</p>
-        <button type="button" onClick={handleVisuals} > YES! </button>
+        <h2 className="chartHeader">Want to see the visualized interactions between your character?</h2>
+        <button className="btn btn-rounded chartButton" type="button" onClick={handleVisuals} > YES! </button>
         </>
       )}
       {showChart && (
-        <div className="chartTable">
-          <Mermaid chart={mermaidChart} />
-        </div>
+      <div className="chartTable">
+        {mermaidError ? (
+        <p className="text-danger">Oops! We couldn't render the interaction chart. Please try another book.</p>
+        ) : (
+        <Mermaid chart={mermaidChart} onError={() => setMermaidError(true)} />
+        )}
+      </div>
       )}
+
       
 
 
