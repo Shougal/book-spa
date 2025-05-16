@@ -23,6 +23,7 @@ export default function home(){
   const [formattedMinorCharacters, setFormattedMinorCharacters] = useState<string>("Looks like there are no minor characters!");
   const [loading, setLoading] = useState(false);
   const [mermaidError, setMermaidError] = useState(false);
+  const [mermaidErrorMsg, setMermaidErrorMsg] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
 
@@ -36,6 +37,7 @@ export default function home(){
     setFormattedSupportingCharacters("Looks like there are no supporting characters!")
     setFormattedMinorCharacters("Looks like there are no minor characters!")
     setLoading(true);
+    setMermaidError(false);
   }
   const handleGutApi = (event: React.SyntheticEvent)=>{
     event.preventDefault();
@@ -113,7 +115,7 @@ export default function home(){
         const identifiedChars = await response.text();
         
         
-        if(identifiedChars === null){
+        if(!identifiedChars || identifiedChars === "null"){
           setTextResult(`Sorry it looks like your book number ${bookNumber} has no identified characters. Please try another book!`);
           setIsIdentified(false);
           setLoading(false);
@@ -142,7 +144,7 @@ export default function home(){
           
           // Parse all supporting chars:
           const supportingCharacters: Character[] = jsonIdentifiedChars?.supporting_characters || [];
-          setFormattedSupportingCharacters(supportingCharacters.length? supportingCharacters.map((c: Character) => `${c.name}: ${c.description}`).join("\n"): "Looks like there are no supportingcharacters!");
+          setFormattedSupportingCharacters(supportingCharacters.length? supportingCharacters.map((c: Character) => `${c.name}: ${c.description}`).join("\n"): "Looks like there are no supporting characters!");
 
           // Parse all minor characters:
           const minorCharacters: Character[] = jsonIdentifiedChars?.minor_characters || [];
@@ -172,12 +174,33 @@ export default function home(){
 
           
 
-          // Mermaid graph of interactions
-          const interactionChart = `graph TD\n` + interactionsList.map(
-            (interact) =>
-              `  ${interact.source} -->|${interact.type}| ${interact.target}`
-          ).join("\n");
-          setMermaidChart(interactionChart);
+          if (interactionsList.length === 0) {
+            setMermaidError(true); // show a message saying "No interactions found"
+            
+          }else {
+
+
+            // Fitler to only have valid interaction list with a source and target character
+            const interactionValids = interactionsList.filter(inter => inter.source && inter.target);
+
+            
+
+            const chartLines = interactionValids.map((inter)=>{
+              // trim and replace invalid characters using regex and
+              // Make sure all strings in interaction list do not start and end with mermaid chart breakers:
+              const type = inter.type?.trim()?.replace(/"/g, "").replace(/^end$/g, "'end'").replace(/ /g, "_").replace(/\s+/g, "_").replace(/,/g, "");
+              const source = inter.source?.trim()?.replace(/"/g, "").replace(/^end$/g, "'end'").replace(/ /g, "_").replace(/\s+/g, "_").replace(/,/g, "");
+              const target = inter.target?.trim()?.replace(/"/g, "").replace(/^end$/g, "'end'").replace(/ /g, "_").replace(/\s+/g, "_").replace(/,/g, "");
+              return `${source} --> |${type}| ${target}`;
+            })
+            console.log('flowchart TD\n', ...chartLines);
+            const interactionChart = ['flowchart TD', ...chartLines].join("\n");
+            console.log("interaction chart is: \n", interactionChart);
+
+
+            // set Mermaid interaction chart
+            setMermaidChart(interactionChart);
+          }
 
           // Set isIdentified to true since we got a response back with the book's characters:
           setIsIdentified(true);
@@ -204,8 +227,10 @@ export default function home(){
 
   const handleVisuals =()=> {
     setShowChart(true);
+    console.log("Clicked YES")
     
   }
+
   return (
     <>
     
@@ -265,6 +290,13 @@ export default function home(){
         </div>
       )}
     
+      {mermaidChart==="" && hasSubmitted && !loading && (
+        <>
+        <h2>No visualization for this book, sorry!</h2>
+        <p>There is no enough characters for us to visualize it into a diagram, please try another book!</p>
+        </>
+
+      )}
       {mermaidChart!=="" && !showChart &&  (
         <>
         <h2 className="chartHeader">Want to see the visualized interactions between your character?</h2>
@@ -273,11 +305,9 @@ export default function home(){
       )}
       {showChart && (
       <div className="chartTable">
-        {mermaidError ? (
-        <p className="text-danger">Oops! We couldn't render the interaction chart. Please try another book.</p>
-        ) : (
-        <Mermaid chart={mermaidChart} onError={() => setMermaidError(true)} />
-        )}
+        {/* This renders the JSX returned by the <MermaidRender /> component here*/}
+        <Mermaid chart ={mermaidChart} />
+        
       </div>
       )}
 
