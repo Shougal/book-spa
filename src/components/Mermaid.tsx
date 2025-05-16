@@ -2,42 +2,74 @@
 
 import React from 'react';
 import mermaid from 'mermaid';
+import { useRef, useEffect,useState } from 'react';
 
-// Defining props type
-type MermaidProps = {
-  chart: string;
-  onError?: () => void;
-};
 
-// Use it with the component
-export default class Mermaid extends React.Component<MermaidProps> {
-    containerRef = React.createRef<HTMLDivElement>();
-    componentDidMount() {
-        this.renderMermaid();
-    }
-    componentDidUpdate(prevProps: MermaidProps) {
-        if (prevProps.chart !== this.props.chart) {
-          this.renderMermaid();
-        }
-      }
+type MermaidProps ={
+    chart: string,
+}
+export default function MermaidRender({chart} :MermaidProps){
+    console.log("inside mermaid\n");
+    console.log("chart in mermaid is: \n"+ chart);
     
-    renderMermaid() {
-        mermaid.initialize({ startOnLoad: false });
-        const { chart, onError } = this.props;
-        mermaid
-          .render('generatedChart', chart)
-          .then(({ svg }) => {
-            if (this.containerRef.current) {
-              this.containerRef.current.innerHTML = svg;
-            }
-          })
-          .catch((error) => {
-            console.error('Mermaid rendering error:', error);
-            if (onError) onError();
-          });
-      }
-      
-    render() {
-        return <div ref={this.containerRef}></div>;
-    }
+    const mermaidRef = useRef<HTMLDivElement>(null);
+    const [renderError, setRenderError] = useState(false);
+   
+    
+    useEffect(()=>{
+        setRenderError(false);
+        
+        if(!chart ){
+            console.log("no chart");
+            return;
+        }
+
+        try{
+            mermaid.initialize({
+                startOnLoad:false,
+                securityLevel: 'loose',
+            })
+        }catch{}
+
+
+        if(mermaidRef.current){
+   
+            const draw = async function(){
+
+                try{
+                    // call a render function with the graph definition as a string. 
+                    console.log('Chart json stingify:', JSON.stringify(chart));
+
+                    //Made sure to have a unique render id per call to solve issue of
+                    //using the same ID multiple times in quick updates, which confused Mermaid’s rendering logic.
+                    const {svg} = await mermaid.render(`graph-${Date.now()}`, chart);
+                   
+                    if(mermaidRef.current){ 
+                        mermaidRef.current.innerHTML = svg;
+                    }
+                    
+                }catch(e:any){
+                    setRenderError(true);
+                } 
+            };
+
+            draw();
+            
+        }
+        
+
+    },[chart]);
+
+    return (
+        <div ref={mermaidRef}>
+          {!renderError && <p>Loading, please wait!</p>}
+          {renderError && (
+            <p className="text-danger">
+              Oops! We couldn't render the interaction chart. Please try another book.
+            </p>
+          )}
+        </div>
+      );
+    
+
 }
